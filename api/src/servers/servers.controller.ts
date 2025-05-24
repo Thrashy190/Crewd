@@ -16,8 +16,8 @@ export class ServersController {
   constructor(private readonly serversService: ServersService) {}
 
   @Post()
-  create(@Body() dto: any, @Req() req: any) {
-    return this.serversService.create(dto, req.user._id);
+  create(@Body() body: { name: string }, @Req() req: any) {
+    return this.serversService.create(body.name, req.user._id);
   }
 
   @Get('my')
@@ -28,5 +28,20 @@ export class ServersController {
   @Post(':serverId/join')
   joinServer(@Param('serverId') serverId: string, @Req() req: any) {
     return this.serversService.joinServer(serverId, req.user._id);
+  }
+
+  @Post(':serverId/add-member')
+  async addMember(
+    @Param('serverId') serverId: string,
+    @Body('email') email: string,
+    @Req() req: any,
+  ) {
+    return this.serversService.addMemberByEmail(serverId, email, req.user._id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':serverId/members')
+  async getMembers(@Param('serverId') serverId: string, @Req() req: any) {
+    return this.serversService.getMembers(serverId, req.user._id);
   }
 }

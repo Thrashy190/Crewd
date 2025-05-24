@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router";
 import { useState } from "react";
-import { api } from "../services/api";
+import { fetchPublic } from "../services/api";
 
 const Register = () => {
   const [form, setForm] = useState({
@@ -13,10 +13,13 @@ const Register = () => {
 
   const handleRegister = async () => {
     try {
-      await api.post("/auth/register", form);
+      await fetchPublic("/auth/register", {
+        method: "POST",
+        body: JSON.stringify(form),
+      });
       navigate("/");
-    } catch {
-      alert("Registro fallido");
+    } catch (err: any) {
+      alert("Error al registrar: " + err.message);
     }
   };
 
@@ -46,6 +49,12 @@ const Register = () => {
           className="w-full bg-blue-600 p-2 rounded"
         >
           Crear cuenta
+        </button>
+        <button
+          onClick={() => navigate("/")}
+          className="w-full bg-gray-800 p-2 rounded hover:cursor-pointer"
+        >
+          Ir a Iniciar sesion
         </button>
       </div>
     </div>

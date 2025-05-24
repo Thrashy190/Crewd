@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User, UserDocument } from './schemas/user.schema';
 import { Model } from 'mongoose';
@@ -17,11 +17,25 @@ export class UsersService {
     return createdUser.save();
   }
 
-  async findByEmail(email: string): Promise<User | null> {
-    return this.userModel.findOne({ email });
+  async findByEmail(email: string): Promise<UserDocument> {
+    const user = await this.userModel.findOne({ email });
+    if (!user) throw new NotFoundException('Usuario no encontrado');
+    return user;
   }
 
-  async findById(id: string): Promise<User | null> {
-    return this.userModel.findById(id);
+  async findById(id: string): Promise<User> {
+    const user = await this.userModel.findById(id).select('-password');
+    if (!user) throw new NotFoundException('Usuario no encontrado');
+    return user;
+  }
+
+  async updateUser(id: string, update: Partial<User>): Promise<User> {
+    const user = await this.userModel
+      .findByIdAndUpdate(id, update, {
+        new: true,
+      })
+      .select('-password');
+    if (!user) throw new NotFoundException('Usuario no encontrado');
+    return user;
   }
 }

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router";
-import { api } from "../services/api";
-
+import { fetchWithToken } from "../services/api";
 type Server = { _id: string; name: string; logoUrl?: string };
 type User = { _id: string; name: string; email: string };
 
@@ -15,12 +14,13 @@ const MainLayout = () => {
     const fetchData = async () => {
       try {
         const [userRes, serverRes] = await Promise.all([
-          api.get("/users/me"),
-          api.get("/servers/my"),
+          fetchWithToken("/users/me"),
+          fetchWithToken("/servers/my"),
         ]);
-        setUser(userRes.data);
-        setServers(serverRes.data);
+        setUser(userRes);
+        setServers(serverRes);
       } catch (err) {
+        console.error("Fallo al cargar usuario o servidores:", err);
         navigate("/");
       }
     };
@@ -30,23 +30,49 @@ const MainLayout = () => {
   return (
     <div className="flex h-screen bg-gray-900 text-white">
       {/* Sidebar Servidores */}
-      <div className="w-[10%] bg-gray-800 p-2 flex flex-col items-center">
-        <button className="mb-4 bg-blue-600 px-2 py-1 rounded">
-          + Servidor
-        </button>
-        {servers.map((server) => (
+      <div className="w-[10%] bg-gray-800 p-2 flex flex-col justify-between ">
+        <div className="flex flex-col items-center ">
           <button
-            key={server._id}
-            onClick={() => navigate(`/home/${server._id}`)}
-            className={`w-12 h-12 rounded-full mb-2 ${
-              location.pathname.includes(server._id)
-                ? "bg-blue-600"
-                : "bg-gray-700"
-            } flex items-center justify-center hover:bg-blue-500`}
+            className="mb-4 bg-blue-600 px-2 py-1 rounded"
+            onClick={async () => {
+              const name = prompt("Nombre del servidor");
+              if (!name) return;
+
+              try {
+                const res = await fetchWithToken("/servers", {
+                  method: "POST",
+                  body: JSON.stringify({ name }),
+                });
+                // Redirige automáticamente al nuevo servidor
+                navigate(`/home/${res._id}`);
+              } catch (err: any) {
+                alert("Error al crear servidor: " + err.message);
+              }
+            }}
           >
-            {server.name[0].toUpperCase()}
+            + Servidor
           </button>
-        ))}
+          {servers.map((server) => (
+            <button
+              key={server._id}
+              onClick={() => navigate(`/home/${server._id}`)}
+              className={` max-w-50 p-4 mb-2 ${
+                location.pathname.includes(server._id)
+                  ? "bg-blue-600"
+                  : "bg-gray-700"
+              } flex items-center justify-center hover:bg-blue-500`}
+            >
+              {server.name}
+            </button>
+          ))}
+        </div>
+
+        <button
+          className="w-full mb-2 bg-gray-900 p-2 rounded"
+          onClick={() => navigate("/")}
+        >
+          Cerrar Sesion
+        </button>
       </div>
 
       <div className="flex-1">

@@ -8,8 +8,8 @@ export type MessageDocument = Message & Document;
 
 @Schema({ timestamps: true })
 export class Message {
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Channel' })
-  channel: Channel;
+  @Prop({ type: String }) // 🔄 antes era ObjectId, ahora String para permitir IDs custom
+  channel: string;
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })
   sender: User;

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { socket } from "../services/socket";
-import { api } from "../services/api";
+import { fetchWithToken } from "../services/api";
 
 type Message = {
   _id: string;
@@ -12,26 +12,24 @@ type Message = {
 const OneToOneChat = () => {
   const { userId } = useParams(); // ID del otro usuario
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [channelId, setChannelId] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
 
-  const [channelId, setChannelId] = useState("");
-
   useEffect(() => {
-    const fetchUserAndGenerateChannel = async () => {
-      const res = await api.get("/users/me");
-      setCurrentUser(res.data);
+    const setupChat = async () => {
+      const user = await fetchWithToken("/users/me");
+      setCurrentUser(user);
 
-      const ids = [res.data._id, userId].sort();
-      const combined = ids.join("-");
-      setChannelId(combined);
+      const ids = [user._id, userId!].sort(); // combinar IDs
+      const generatedChannelId = ids.join("-");
+      setChannelId(generatedChannelId);
 
-      // Aquí puedes usar un endpoint real tipo /messages/direct/:userId
-      const messagesRes = await api.get(`/messages/${combined}`);
-      setMessages(messagesRes.data);
+      const msgs = await fetchWithToken(`/messages/${generatedChannelId}`);
+      setMessages(msgs);
 
       socket.connect();
-      socket.emit("join_channel", combined);
+      socket.emit("join_channel", generatedChannelId);
       socket.on("receive_message", (msg: Message) => {
         setMessages((prev) => [...prev, msg]);
       });
@@ -41,13 +39,17 @@ const OneToOneChat = () => {
       };
     };
 
-    fetchUserAndGenerateChannel();
+    setupChat();
   }, [userId]);
 
   const sendMessage = async () => {
     if (!newMessage.trim()) return;
 
-    await api.post(`/messages/${channelId}`, { content: newMessage });
+    await fetchWithToken(`/messages/${channelId}`, {
+      method: "POST",
+      body: JSON.stringify({ content: newMessage }),
+    });
+
     socket.emit("send_message", {
       channelId,
       content: newMessage,
@@ -59,13 +61,11 @@ const OneToOneChat = () => {
 
   return (
     <div className="flex flex-col h-screen bg-gray-900 text-white">
-      {/* Top */}
       <div className="p-4 bg-gray-800">
-        <h2>Chat con {userId}</h2>
+        <h2>Chat 1 a 1</h2>
       </div>
 
-      {/* Mensajes */}
-      <div className="flex-1 p-4 overflow-y-auto space-y-2">
+      <div className="flex-1 overflow-y-auto p-4 space-y-2">
         {messages.map((msg) => (
           <div key={msg._id} className="bg-gray-700 p-2 rounded">
             <strong>{msg.sender.name}</strong>
@@ -74,7 +74,6 @@ const OneToOneChat = () => {
         ))}
       </div>
 
-      {/* Input */}
       <div className="p-4 bg-gray-800 flex gap-2">
         <input
           className="flex-1 p-2 rounded bg-gray-700"

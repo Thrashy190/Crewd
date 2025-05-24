@@ -7,6 +7,8 @@ export type UserDocument = User & Document;
 
 @Schema({ timestamps: true })
 export class User {
+  _id: mongoose.Types.ObjectId;
+
   @Prop({ required: true })
   name: string;
 

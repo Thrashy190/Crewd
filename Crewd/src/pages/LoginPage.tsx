@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { api } from "../services/api";
 import { useNavigate } from "react-router";
+import { fetchPublic } from "../services/api";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -9,11 +9,15 @@ const Login = () => {
 
   const handleLogin = async () => {
     try {
-      const res = await api.post("/auth/login", { email, password });
-      localStorage.setItem("token", res.data.access_token);
+      const res = await fetchPublic("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+
+      localStorage.setItem("token", res.access_token);
       navigate("/home");
-    } catch (err) {
-      alert("Login fallido");
+    } catch (err: any) {
+      alert("Error de login: " + err.message);
     }
   };
 
@@ -22,14 +26,12 @@ const Login = () => {
       <div className="w-full max-w-sm space-y-4">
         <h2 className="text-2xl">Inicio de Sesión</h2>
         <input
-          className="w-full p-2 rounded"
           placeholder="Correo"
           onChange={(e) => setEmail(e.target.value)}
         />
         <input
-          className="w-full p-2 rounded"
-          placeholder="Contraseña"
           type="password"
+          placeholder="Contraseña"
           onChange={(e) => setPassword(e.target.value)}
         />
         <button
@@ -37,6 +39,12 @@ const Login = () => {
           className="w-full bg-blue-600 p-2 rounded"
         >
           Iniciar sesión
+        </button>
+        <button
+          onClick={() => navigate("/register")}
+          className="w-full bg-gray-800 p-2 rounded hover:cursor-pointer"
+        >
+          Registrarse
         </button>
       </div>
     </div>

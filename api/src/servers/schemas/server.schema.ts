@@ -8,20 +8,19 @@ export type ServerDocument = Server & Document;
 
 @Schema({ timestamps: true })
 export class Server {
+  _id: mongoose.Types.ObjectId;
+
   @Prop({ required: true })
   name: string;
-
-  @Prop()
-  logoUrl: string;
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })
   creator: User;
 
   @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }])
-  members: User[];
+  members: mongoose.Types.ObjectId[];
 
   @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'Channel' }])
-  channels: Channel[];
+  channels: mongoose.Types.ObjectId[];
 }
 
 export const ServerSchema = SchemaFactory.createForClass(Server);
